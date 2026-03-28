@@ -3,7 +3,7 @@ plugins {
     // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -27,7 +27,7 @@ if (flutterVersionName == null) {
 
 
 android {
-    namespace "com.example.news_app_clean_architecture" // Add your namespace here
+    namespace "com.example.news_app_clean_architecture"
 
     compileSdkVersion flutter.compileSdkVersion
 
@@ -68,12 +68,7 @@ flutter {
     source '../..'
 }
 
-ext {
-    kotlin_version="1.6.10"
-}
-
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     def multidex_version = "2.0.1"
     implementation("androidx.multidex:multidex:$multidex_version")
 }

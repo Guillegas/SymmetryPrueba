@@ -37,7 +37,8 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
       builder: (context, state) {
         return Scaffold(
           appBar: _buildAppBar(),
-          body: _buildBody(state),
+          body: _buildBody(),
+          bottomNavigationBar: _buildPublishButton(state),
         );
       },
     );
@@ -46,67 +47,64 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
   AppBar _buildAppBar() {
     return AppBar(
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+        icon: const Icon(Icons.chevron_left, color: Colors.black, size: 30),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
-        'Create Article',
-        style: TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.w600,
-          fontSize: 18,
-        ),
-      ),
-      centerTitle: true,
       backgroundColor: Colors.white,
       elevation: 0,
     );
   }
 
-  Widget _buildBody(ArticlePublisherState state) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Title Input ---
-          _buildTitleInput(),
-          const SizedBox(height: 24),
-
-          // --- Attach Image Button / Image Preview ---
-          _buildAttachImageSection(),
-          const SizedBox(height: 24),
-
-          // --- Content Input ---
-          _buildContentInput(),
-          const SizedBox(height: 40),
-
-          // --- Publish Button ---
-          _buildPublishButton(state),
-          const SizedBox(height: 24),
-        ],
-      ),
+  Widget _buildBody() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight - 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildTitleInput(),
+                const SizedBox(height: 16),
+                _buildAttachImageSection(),
+                const SizedBox(height: 16),
+                _buildContentInput(),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildTitleInput() {
-    return TextField(
-      controller: _titleController,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: Colors.black,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(12),
       ),
-      maxLines: 2,
-      decoration: const InputDecoration(
-        hintText: 'Write your title here...',
-        hintStyle: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFFBDBDBD),
+      child: TextField(
+        controller: _titleController,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
         ),
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.zero,
+        maxLines: 3,
+        minLines: 2,
+        decoration: const InputDecoration(
+          hintText: 'Write your title here...',
+          hintStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFFBDBDBD),
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.all(16),
+        ),
       ),
     );
   }
@@ -119,22 +117,25 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
   }
 
   Widget _buildAttachImageButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
+    return Center(
       child: ElevatedButton.icon(
         onPressed: _pickThumbnail,
-        icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
+        icon: const Icon(Icons.camera_alt_outlined, color: Colors.black87),
         label: const Text(
           'Attach Image',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: kSymmetryPurple,
+          backgroundColor: kSymmetryPurple.withOpacity(0.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
       ),
     );
@@ -175,12 +176,19 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
 
   Widget _buildContentInput() {
     return Container(
-      constraints: const BoxConstraints(minHeight: 200),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: TextField(
         controller: _contentController,
-        style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+          height: 1.5,
+        ),
         maxLines: null,
-        minLines: 8,
+        minLines: 12,
         decoration: const InputDecoration(
           hintText: 'Add article here, .....',
           hintStyle: TextStyle(
@@ -188,7 +196,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
             color: Color(0xFFBDBDBD),
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
+          contentPadding: EdgeInsets.all(16),
         ),
       ),
     );
@@ -197,36 +205,47 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
   Widget _buildPublishButton(ArticlePublisherState state) {
     final isLoading = state is ArticlePublisherLoading;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : _onPublishTapped,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kSymmetryPurple,
-          disabledBackgroundColor: kSymmetryPurple.withOpacity(0.6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    return Container(
+      padding: const EdgeInsets.all(0),
+      child: SizedBox(
+        width: double.infinity,
+        height: 64,
+        child: ElevatedButton(
+          onPressed: isLoading ? null : _onPublishTapped,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kSymmetryPurple.withOpacity(0.25),
+            disabledBackgroundColor: kSymmetryPurple.withOpacity(0.15),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
-        ),
-        child: isLoading
-            ? const CupertinoActivityIndicator(color: Colors.white)
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Publish Article',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+          child: isLoading
+              ? const CupertinoActivityIndicator(color: Colors.black)
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_forward, color: Colors.black, size: 24),
+                    Text(
+                      ')',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, color: Colors.white),
-                ],
-              ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Publish Article',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -267,32 +286,17 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
     final content = _contentController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a title'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showValidationError('Please enter a title');
       return;
     }
 
     if (_thumbnailBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please attach a thumbnail image'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showValidationError('Please attach a thumbnail image');
       return;
     }
 
     if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write your article content'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showValidationError('Please write your article content');
       return;
     }
 
@@ -307,5 +311,14 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
             ),
           ),
         );
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 }
