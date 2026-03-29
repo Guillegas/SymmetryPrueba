@@ -1,337 +1,312 @@
-# Symmetry News App — Project Report
+# Symmetry News App — Informe del Proyecto
 
-## 1. Introduction
+## 1. Introducción
 
-When I first opened the project, I felt a mix of excitement and challenge. The assignment combined several technologies I was eager to work with — Flutter, Clean Architecture, BLoC, and Firebase — into a real-world application that demanded pixel-perfect design, solid architecture, and full end-to-end functionality. As someone passionate about building products that work flawlessly, this project was a perfect opportunity to demonstrate my approach to software development: understand the requirements deeply, follow the architecture strictly, and then go beyond what's asked.
+Este proyecto consiste en una aplicación de noticias multiplataforma desarrollada con Flutter, Clean Architecture y BLoC. Nunca había trabajado con Dart ni Flutter antes de esta prueba. Mi contexto es el de un desarrollador junior que partió de cero con estas tecnologías y tuvo que aprender la arquitectura, el lenguaje y el ecosistema en paralelo al desarrollo.
 
-The goal was clear: build a cross-platform news application where journalists can browse daily news from NewsAPI and publish their own articles with thumbnails to Firebase (Firestore + Cloud Storage), all following Clean Architecture principles with BLoC state management.
+El objetivo: construir una app donde los periodistas puedan consultar noticias diarias de NewsAPI y publicar sus propios artículos con imagen a Firebase (Firestore + Cloud Storage), siguiendo los principios de Clean Architecture con BLoC como patrón de estado.
 
-## 2. Learning Journey
+El resultado final incluye el cumplimiento completo de los requisitos base más 8 funcionalidades extra que describo en la sección de overdelivery.
 
-### Technologies Learned & Applied
+## 2. Proceso de Aprendizaje
 
-- **Flutter & Dart** — Cross-platform UI framework with a widget-based architecture. I learned to think in terms of widget composition, state management patterns, and platform-specific adaptations.
-- **BLoC Pattern** (`flutter_bloc ^9.1.1`) — Event-driven state management that cleanly separates business logic from the UI layer. Each user action becomes an Event, and the UI reacts to State changes.
-- **Clean Architecture** — Three-layer separation following Robert C. Martin's principles:
-  - **Domain** (pure Dart) — Entities, repository interfaces, and use cases with zero external dependencies
-  - **Data** — Models, data sources (Firebase, REST API, local DB), and repository implementations
-  - **Presentation** — Screens, widgets, and BLoCs that never touch data sources directly
-- **Firebase Firestore** — NoSQL cloud database for storing published articles with server-side timestamps
-- **Firebase Cloud Storage** — Media storage for article thumbnails at `media/articles/{articleId}/`
-- **Retrofit + Dio** — Type-safe HTTP client for consuming NewsAPI REST endpoints with automatic JSON deserialization
-- **Floor (sqflite)** — Local SQLite ORM for offline article bookmarking
-- **GetIt** — Service locator pattern for dependency injection, wiring all layers together
-- **image_picker** — Cross-platform image selection using `Uint8List` bytes for web compatibility
-- **Firebase Auth + Google Sign-In** — Full authentication system with email/password and Google OAuth, protecting the app behind a login screen
-- **OpenAI API (GPT-4o-mini)** — AI-powered article analysis via REST (Dio), following Clean Architecture with abstract repository, use cases, and presentation layer
+### Tecnologías aprendidas y aplicadas
 
-### Resources Used
+- **Flutter y Dart** — Framework multiplataforma basado en widgets. Aprendí composición de widgets, gestión de estado y adaptaciones por plataforma.
+- **Patrón BLoC** (`flutter_bloc ^9.1.1`) — Gestión de estado basada en eventos. La UI emite Events, el BLoC los procesa y emite States. Separa la lógica de negocio de la interfaz.
+- **Clean Architecture** — Separación en tres capas según los principios de Robert C. Martin:
+  - **Domain** (Dart puro) — Entidades, interfaces de repositorio y casos de uso sin dependencias externas
+  - **Data** — Modelos, data sources (Firebase, REST API, SQLite) e implementaciones de repositorio
+  - **Presentation** — Pantallas, widgets y BLoCs que nunca acceden directamente a los data sources
+- **Firebase Firestore** — Base de datos NoSQL en la nube para almacenar artículos publicados
+- **Firebase Cloud Storage** — Almacenamiento de imágenes en `media/articles/{articleId}/`
+- **Retrofit + Dio** — Cliente HTTP tipado para consumir la API REST de NewsAPI con deserialización JSON automática
+- **Floor (sqflite)** — ORM para SQLite local, utilizado para guardar artículos offline
+- **GetIt** — Service locator para inyección de dependencias entre todas las capas
+- **image_picker** — Selección de imagen multiplataforma usando `Uint8List` para compatibilidad web
+- **Firebase Auth + Google Sign-In** — Sistema de autenticación completo con email/password y Google OAuth
+- **API de OpenAI (GPT-4o-mini)** — Análisis de artículos con IA siguiendo Clean Architecture
 
-- Flutter official documentation (flutter.dev)
-- Firebase for Flutter documentation (firebase.google.com)
-- BLoC library documentation and migration guides (bloclibrary.dev)
-- Clean Architecture principles by Robert C. Martin
-- The project's own documentation files (`APP_ARCHITECTURE.md`, `CODING_GUIDELINES.md`, `ARCHITECTURE_VIOLATIONS.md`)
-- Reso Coder's Clean Architecture Flutter tutorial (as recommended in the project README)
+### Recursos utilizados
 
-## 3. Challenges Faced
+- Documentación oficial de Flutter (flutter.dev)
+- Documentación de Firebase para Flutter (firebase.google.com)
+- Documentación de la librería BLoC (bloclibrary.dev)
+- Principios de Clean Architecture de Robert C. Martin
+- Documentación propia del proyecto (`APP_ARCHITECTURE.md`, `CODING_GUIDELINES.md`, `ARCHITECTURE_VIOLATIONS.md`)
+- Tutorial de Clean Architecture en Flutter de Reso Coder (recomendado en el README del proyecto)
 
-### 3.1 Cross-Platform Compatibility (Web + Mobile)
+## 3. Retos encontrados
 
-**Problem:** `dart:io File` is not available on Flutter Web, which broke the entire image upload flow — from the picker widget through the params, use case, data source, and Firebase upload.
+### 3.1 Compatibilidad multiplataforma (Web + Mobile)
 
-**Solution:** Refactored the complete thumbnail pipeline across all layers to use `Uint8List` bytes + `String fileName` instead of `File` objects:
+**Problema:** `dart:io File` no está disponible en Flutter Web. Esto rompía todo el flujo de subida de imágenes — desde el widget picker hasta el upload a Firebase Storage.
+
+**Solución:** Refactoricé el pipeline completo de thumbnails en todas las capas para usar `Uint8List` (bytes crudos) + `String fileName` en lugar de objetos `File`:
 - `PublishArticleParams` → `thumbnailBytes: Uint8List` + `thumbnailFileName: String`
-- `ThumbnailPickerWidget` → `MemoryImage(bytes)` instead of `FileImage(file)`
-- Firebase Storage → `putData(bytes)` instead of `putFile(file)` (works on all platforms)
+- `ThumbnailPickerWidget` → `MemoryImage(bytes)` en vez de `FileImage(file)`
+- Firebase Storage → `putData(bytes)` en vez de `putFile(file)`
 
-**Lesson:** Always design data contracts platform-agnostically from the start. Using bytes instead of File objects makes the code truly cross-platform without conditional imports.
+**Conclusión:** Los contratos de datos deben ser agnósticos a la plataforma desde el inicio. Usar bytes en lugar de File hace que el código sea multiplataforma sin imports condicionales.
 
-### 3.2 Firebase Storage CORS
+### 3.2 CORS en Firebase Storage
 
-**Problem:** Images uploaded to Firebase Storage loaded correctly on mobile but showed broken image placeholders on web due to browser CORS restrictions.
+**Problema:** Las imágenes subidas a Firebase Storage se cargaban en móvil pero aparecían rotas en web por restricciones CORS del navegador.
 
-**Solution:** Configured CORS policy on the Firebase Storage bucket using:
+**Solución:** Configuración de política CORS en el bucket de Storage:
 ```bash
 gsutil cors set cors.json gs://symmetry-news-app-5dcc3.firebasestorage.app
 ```
-With a policy allowing GET/HEAD requests from all origins with a 1-hour cache.
 
-**Lesson:** When building for web, CORS must be explicitly configured on every external service, including Firebase Storage.
+### 3.3 CORS en NewsAPI
 
-### 3.3 NewsAPI CORS on Web
+**Problema:** NewsAPI bloquea peticiones directas desde el navegador.
 
-**Problem:** NewsAPI blocks direct browser requests with its CORS policy, returning opaque responses.
+**Solución:** Interceptor de Dio que redirige las peticiones a través de un proxy CORS (`corsproxy.io`) solo cuando `kIsWeb` es true. Las plataformas nativas no se ven afectadas.
 
-**Solution:** Implemented a Dio interceptor that dynamically routes requests through a CORS proxy (`corsproxy.io`) only when `kIsWeb` is true:
-```dart
-if (kIsWeb) {
-  dio.interceptors.add(InterceptorsWrapper(
-    onRequest: (options, handler) {
-      final original = options.uri.toString();
-      options.path = 'https://corsproxy.io/?${Uri.encodeComponent(original)}';
-      options.baseUrl = '';
-      options.queryParameters = {};
-      handler.next(options);
-    },
-  ));
-}
-```
-Native platforms (Android, iOS) remain completely unaffected.
+### 3.4 Base de datos local en Web
 
-### 3.4 Local Database on Web
+**Problema:** sqflite/Floor falla en Flutter Web porque depende de bindings nativos de SQLite.
 
-**Problem:** sqflite/Floor crashes on Flutter Web during startup since it relies on native SQLite bindings.
+**Solución:** Clases fallback `_NoOpAppDatabase` y `_NoOpArticleDao` que devuelven resultados vacíos en web. La funcionalidad de artículos guardados se degrada de forma controlada sin afectar al resto de la app.
 
-**Solution:** Created `_NoOpAppDatabase` and `_NoOpArticleDao` fallback classes that return empty results on web. The saved-articles feature degrades gracefully — the rest of the app works perfectly:
-```dart
-if (kIsWeb) {
-  try {
-    database = await $FloorAppDatabase.inMemoryDatabaseBuilder().build();
-  } catch (_) {
-    database = _NoOpAppDatabase();
-  }
-}
-```
+### 3.5 Code Signing en Xcode 26 (macOS/iOS)
 
-### 3.5 Xcode 26 Code Signing (macOS/iOS)
+**Problema:** Xcode 26 beta añade un atributo extendido `com.apple.provenance` que hace fallar la firma de código de los frameworks de Flutter.
 
-**Problem:** Xcode 26 beta adds an irremovable `com.apple.provenance` extended attribute to all copied framework files, making code signing fail with "resource fork, Finder information, or similar detritus not allowed."
+**Solución:** Tras investigación exhaustiva (parcheado del SDK de Flutter, limpieza de xattrs, pruebas con `CODE_SIGNING_ALLOWED=NO`), se confirmó como un bug no resuelto de Apple beta. La app se ejecuta en web y Android mientras el código permanece preparado para iOS/macOS cuando Apple publique la corrección.
 
-**Solution:** After exhaustive investigation (patching Flutter SDK's `removeFinderExtendedAttributes`, clearing xattrs from build folders, trying `CODE_SIGNING_ALLOWED=NO`), this was confirmed as an unresolvable Apple beta bug. The app targets web and Android for demo purposes while the code remains fully cross-platform for when Apple ships the fix.
+## 4. Reflexión y Direcciones Futuras
 
-## 4. Reflection and Future Directions
+### Aprendizajes técnicos
 
-### What I Learned
+- **Disciplina de Clean Architecture** — La separación estricta por capas resulta verbosa al principio, pero se amortiza al añadir nuevas funcionalidades. Añadir edit/delete requirió cambios mínimos en el código existente porque cada capa tiene una única responsabilidad.
 
-- **Clean Architecture discipline** — The strict layer separation felt verbose at first (creating entities, models, use cases, repositories, data sources for each feature), but it pays off immediately when adding new features. Adding delete/update functionality required minimal changes to existing code because each layer has a single responsibility.
+- **Predictibilidad de BLoC** — El flujo Event → State hace que el comportamiento sea determinista. Cada transición de estado es explícita, lo que facilita el debugging.
 
-- **BLoC predictability** — The event → state flow makes the app behavior completely deterministic. Every state transition is explicit, making debugging straightforward. The `BlocConsumer` pattern (listening for side effects while building UI from states) is particularly elegant.
+- **Pensamiento multiplataforma** — Desarrollar simultáneamente para web, móvil y desktop obliga a diseñar abstracciones correctas desde el inicio.
 
-- **Cross-platform thinking** — Building for web, mobile, and desktop simultaneously forces you to design abstractions correctly from the start. The `Uint8List` refactoring taught me that platform-specific types should never leak into domain or data contracts.
+- **Firebase como backend rápido** — Con Firestore, Storage y security rules se obtiene un backend funcional sin escribir código de servidor.
 
-- **Firebase as a rapid backend** — With Firestore, Storage, and security rules, I had a production-ready backend without writing a single line of server code. The declarative security rules are powerful for a project of this scope.
+### Crecimiento profesional
 
-### Growth as a Developer
+- Navegar codebases y patrones arquitectónicos desconocidos con rapidez
+- Tomar decisiones pragmáticas ante bloqueos (bug de Xcode 26 → pivot a web/Android)
+- Seguir documentación con rigor sin renunciar a la innovación
+- Construir funcionalidades end-to-end a través de todas las capas arquitectónicas
 
-This project strengthened my ability to:
-- Navigate unfamiliar codebases and architecture patterns quickly
-- Make pragmatic decisions when facing blockers (Xcode 26 bug → pivot to web/Android)
-- Follow documentation rigorously while still finding room for innovation
-- Build features end-to-end across all architectural layers
+### Mejoras futuras
 
-### Future Improvements
+- **Paginación** — Scroll infinito usando cursores de Firestore
+- **Offline-first** — Persistencia local de Firestore para lectura sin internet
+- **Tests** — Tests unitarios para BLoCs (transiciones event/state), use cases y repositorios. Tests de widgets para los flujos críticos de UI
+- **Categorías de artículos** — Filtrado por tema usando parámetros de NewsAPI
+- **Push Notifications** — Alertas de nuevos artículos vía Firebase Cloud Messaging
+- **Control de acceso por roles** — Roles admin/periodista mediante custom claims de Firestore
 
-- **Pagination** — Infinite scroll loading for the article feed using Firestore cursors
-- **Offline-first** — Firestore local persistence for reading articles without internet
-- **Unit & Widget Tests** — BLoC tests for every event/state transition, widget tests for UI components
-- **Article Categories** — Filter by topic (technology, sports, politics) using NewsAPI parameters
-- **Push Notifications** — Alert users when new articles are published via Firebase Cloud Messaging
-- **Role-based access** — Admin vs journalist roles via Firestore custom claims
+## 5. Prueba del Proyecto
 
-## 5. Proof of the Project
+### Cómo ejecutar
 
-### How to Run
-
-1. Clone the repository:
+1. Clonar el repositorio:
    ```bash
    git clone https://github.com/Guillegas/SymmetryPrueba.git
    ```
-2. Navigate to the frontend:
+2. Navegar al frontend:
    ```bash
    cd starter-project/frontend
    ```
-3. Install dependencies:
+3. Instalar dependencias:
    ```bash
    flutter pub get
    ```
-4. Run on Chrome (web):
+4. Crear el archivo de API keys (necesario para la funcionalidad de IA):
+   ```bash
+   # Crear lib/config/api_keys.dart con:
+   class ApiKeys {
+     static const openAiKey = 'TU_OPENAI_API_KEY';
+   }
+   ```
+5. Ejecutar en Chrome:
    ```bash
    flutter run -d chrome
    ```
-5. Run on Android (emulator or device):
+6. Ejecutar en Android (emulador o dispositivo):
    ```bash
    flutter run -d android
    ```
 
-### Key Flows to Test
+### Flujos principales a probar
 
-1. **Login screen** — Register a new account with email/password, or use Google Sign-In
-2. **Welcome feedback** — Green snackbar with "Welcome, [name]!" on successful login
-3. **Home screen** loads articles from NewsAPI + Firebase Firestore
-4. **Search bar** filters articles in real-time by title, description, or author
-5. **Pull to refresh** reloads the entire feed
-6. **Tap (+) FAB** → Create Article form with validation (author auto-filled from account)
-7. **Publish** uploads thumbnail to Storage, saves document to Firestore
-8. **Published articles** appear at the top of the home feed
-9. **Tap an article** → Detail view with full content
-10. **AI Assistant (✨ icon)** → Bottom sheet with Summarize, Suggest Headline, and Analyze Sentiment
-11. **Own articles** show edit/delete options in the detail view's menu (⋮)
-12. **Share button** shares article text natively (Android) or via dialog (web)
-13. **Bookmark FAB** saves articles locally
-14. **Dark mode toggle** (sun/moon icon in the app bar) switches between light and dark themes
-15. **Bookmark icon** in the app bar opens saved articles, where articles can be removed
-16. **Logout** — Logout icon in the app bar with confirmation dialog
+1. **Pantalla de login** — Registro con email/password o Google Sign-In
+2. **Feedback de bienvenida** — Snackbar verde con "Welcome, [nombre]" tras login exitoso
+3. **Pantalla principal** — Carga artículos de NewsAPI + artículos propios de Firestore
+4. **Barra de búsqueda** — Filtrado en tiempo real por título, descripción o autor
+5. **Pull to refresh** — Recarga del feed completo
+6. **Botón (+)** → Formulario de creación con validación (autor auto-rellenado desde la cuenta)
+7. **Publicar** → Sube imagen a Storage + crea documento en Firestore
+8. **Artículos publicados** — Aparecen en la parte superior del feed
+9. **Detalle de artículo** — Vista completa con imagen, título, fecha relativa y contenido
+10. **Asistente IA (icono ✨)** — Bottom sheet con Resumir, Sugerir Titular y Análisis de Sentimiento
+11. **Artículos propios** — Menú (⋮) con opciones de Editar y Eliminar
+12. **Compartir** — Botón de compartir con share sheet nativo (Android) o diálogo (web)
+13. **Guardar artículo** — Bookmark que almacena en SQLite local (funciona offline)
+14. **Dark mode** — Toggle sol/luna en la barra superior
+15. **Artículos guardados** — Icono en la barra superior abre la lista de guardados
+16. **Logout** — Icono de cierre de sesión con diálogo de confirmación
 
 ## 6. Overdelivery
 
-### 6.1 New Features Implemented
+### 6.1 Funcionalidades adicionales implementadas
 
-Beyond the base requirements (browse NewsAPI + publish articles), I implemented **8 additional features**:
+Además de los requisitos base (consultar NewsAPI + publicar artículos), implementé **8 funcionalidades extra**:
 
-#### 🔍 Real-Time Search
-- **What:** A search bar at the top of the home screen that filters all articles (both NewsAPI and published) in real-time as you type.
-- **How:** Client-side filtering by title, description, and author. Shows "No articles found" when the query matches nothing.
-- **Why:** Essential UX feature for any news app — users need to find specific articles quickly.
-- **Location:** `lib/features/daily_news/presentation/pages/home/daily_news.dart`
+#### 🔍 Búsqueda en tiempo real
+- **Descripción:** Barra de búsqueda en la pantalla principal que filtra todos los artículos (NewsAPI y propios) mientras el usuario escribe.
+- **Implementación:** Filtrado client-side por título, descripción y autor. Muestra mensaje "No articles found" cuando no hay coincidencias.
+- **Justificación:** Funcionalidad básica de UX en cualquier app de noticias.
+- **Ubicación:** `lib/features/daily_news/presentation/pages/home/daily_news.dart`
 
 #### 🔄 Pull to Refresh
-- **What:** Swipe down on the home screen to reload all articles from both data sources.
-- **How:** Uses Flutter's `RefreshIndicator` widget, triggering `GetArticles` event on the `RemoteArticlesBloc`. Also auto-refreshes when returning from the Create Article screen.
-- **Why:** Users expect fresh content on demand, especially in a news app.
-- **Location:** `lib/features/daily_news/presentation/pages/home/daily_news.dart`
+- **Descripción:** Gesto de arrastrar hacia abajo para recargar artículos de ambas fuentes.
+- **Implementación:** `RefreshIndicator` de Flutter que dispara `GetArticles` en el `RemoteArticlesBloc`. También se auto-refresca al volver de la pantalla de crear artículo.
+- **Justificación:** Los usuarios esperan poder actualizar el contenido manualmente.
+- **Ubicación:** `lib/features/daily_news/presentation/pages/home/daily_news.dart`
 
-#### ✏️ Full CRUD (Edit & Delete Own Articles)
-- **What:** Journalists can edit the title/content of their published articles, or delete them entirely (including the thumbnail from Firebase Storage).
-- **How:** Added complete architectural flow following Clean Architecture:
-  - **Domain:** `DeleteArticleUseCase`, `UpdateArticleUseCase` with their params
-  - **Data:** Extended `ArticlePublisherDataSource` with `deleteArticle()` and `updateArticle()` methods
-  - **Presentation:** New `EditArticleScreen`, new BLoC events (`DeleteArticleEvent`, `UpdateArticleEvent`) and states (`ArticlePublisherDeleted`, `ArticlePublisherUpdated`)
-  - Own articles are identified by the `firestoreId` field on `ArticleEntity`
-  - The detail view shows a popup menu (⋮) with Edit and Delete options only for own articles
-  - Delete shows a confirmation dialog before proceeding
-- **Why:** A publishing platform without edit/delete is incomplete. This demonstrates full mastery of the Clean Architecture pattern by adding a complete feature across all layers.
-- **Location:**
+#### ✏️ CRUD completo (Editar y Eliminar artículos propios)
+- **Descripción:** Los periodistas pueden editar título/contenido de sus artículos o eliminarlos por completo (incluyendo la imagen de Firebase Storage).
+- **Implementación:** Flujo arquitectónico completo siguiendo Clean Architecture:
+  - **Domain:** `DeleteArticleUseCase`, `UpdateArticleUseCase` con sus params (Equatable)
+  - **Data:** Métodos `deleteArticle()` y `updateArticle()` en `ArticlePublisherDataSource`
+  - **Presentation:** `EditArticleScreen`, eventos `DeleteArticleEvent`/`UpdateArticleEvent` y estados `ArticlePublisherDeleted`/`ArticlePublisherUpdated`
+  - Los artículos propios se identifican por el campo `firestoreId` en `ArticleEntity`
+  - La vista de detalle muestra menú (⋮) con Editar/Eliminar solo para artículos propios
+  - Eliminar muestra diálogo de confirmación
+- **Justificación:** Una plataforma de publicación sin edición/eliminación está incompleta. Demuestra el dominio del patrón Clean Architecture al añadir una funcionalidad completa en todas las capas.
+- **Ubicación:**
   - `lib/features/article_publisher/domain/use_cases/delete_article_usecase.dart`
   - `lib/features/article_publisher/domain/use_cases/update_article_usecase.dart`
   - `lib/features/article_publisher/presentation/screens/edit_article_screen.dart`
 
-#### 📤 Share Article
-- **What:** Share button in the article detail screen that uses the native share sheet (Android) or clipboard-friendly dialog (web).
-- **How:** Uses `share_plus` package for native sharing. Composes a message with the article title, description, and URL.
-- **Why:** Sharing is a core feature of any news app — readers want to send interesting articles to others.
-- **Location:** `lib/features/daily_news/presentation/pages/article_detail/article_detail.dart`
+#### 📤 Compartir artículo
+- **Descripción:** Botón de compartir en la pantalla de detalle que usa el share sheet nativo de Android o diálogo en web.
+- **Implementación:** Paquete `share_plus`. Compone un mensaje con título, descripción y URL del artículo.
+- **Justificación:** Funcionalidad estándar en apps de noticias.
+- **Ubicación:** `lib/features/daily_news/presentation/pages/article_detail/article_detail.dart`
 
 #### 🌙 Dark Mode
-- **What:** Toggle between light and dark themes with a single tap on the sun/moon icon in the app bar.
-- **How:** Implemented using a `ThemeCubit` (lightweight BLoC) that manages `ThemeMode`. Both `lightTheme()` and `darkTheme()` are defined with appropriate color schemes. The `MaterialApp` responds to theme changes via `BlocBuilder`.
-- **Why:** Dark mode is an expected feature in modern apps, improves readability in low-light environments, and reduces battery consumption on OLED screens.
-- **Location:**
+- **Descripción:** Toggle entre tema claro y oscuro con un toque en el icono sol/luna de la barra superior.
+- **Implementación:** `ThemeCubit` (Cubit ligero) que gestiona `ThemeMode`. Definidos `lightTheme()` y `darkTheme()` con esquemas de color completos. `MaterialApp` reacciona a cambios de tema via `BlocBuilder`.
+- **Justificación:** Funcionalidad estándar en apps modernas. Mejora la legibilidad en entornos oscuros y reduce consumo de batería en pantallas OLED.
+- **Ubicación:**
   - `lib/config/theme/theme_cubit.dart`
   - `lib/config/theme/app_themes.dart`
 
-#### 🔐 Firebase Authentication (Email/Password + Google Sign-In)
-- **What:** Full authentication system that protects the app behind a login/register screen. Supports email/password registration and Google OAuth sign-in.
-- **How:** Complete Clean Architecture implementation:
+#### 🔐 Autenticación con Firebase (Email/Password + Google Sign-In)
+- **Descripción:** Sistema de autenticación completo que protege la app tras una pantalla de login/registro. Soporta email/password y Google OAuth.
+- **Implementación:** Clean Architecture completa:
   - **Domain:** `UserEntity`, `AuthRepository` (abstract), `SignInUseCase`, `SignUpUseCase`, `SignOutUseCase`
-  - **Data:** `FirebaseAuthDataSource` (wraps `FirebaseAuth` + `GoogleSignIn`), `AuthRepositoryImpl` with friendly error messages
-  - **Presentation:** `AuthBloc` (listens to Firebase auth state changes in real-time), `LoginPage` with toggle between Sign In / Sign Up, Google button, and password visibility toggle
-  - `main.dart` shows a splash screen → login (if unauthenticated) or home (if authenticated)
-  - Published articles now use the authenticated user's name/email as author (no more hardcoded "Journalist")
-  - Logout button with confirmation dialog in the home screen
-- **Why:** Authentication is essential for a multi-user publishing platform. It enables article ownership, protects the app, and personalizes the experience.
-- **Location:**
-  - `lib/features/auth/` (full Clean Architecture: domain → data → presentation)
-  - `lib/main.dart` (auth-based routing)
+  - **Data:** `FirebaseAuthDataSource` (wrapper de `FirebaseAuth` + `GoogleSignIn`), `AuthRepositoryImpl` con mensajes de error descriptivos
+  - **Presentation:** `AuthBloc` (escucha `authStateChanges` en tiempo real), `LoginPage` con toggle Sign In/Sign Up, botón de Google y toggle de visibilidad de contraseña
+  - `main.dart` muestra login (si no autenticado) o home (si autenticado) usando `BlocBuilder<AuthBloc, AuthState>`
+  - Los artículos publicados usan el nombre/email del usuario autenticado como autor
+  - Botón de logout con diálogo de confirmación
+- **Justificación:** La autenticación es esencial en una plataforma multiusuario. Permite propiedad de artículos, protege la app y personaliza la experiencia.
+- **Ubicación:**
+  - `lib/features/auth/` (Clean Architecture completa: domain → data → presentation)
+  - `lib/main.dart` (routing basado en estado de autenticación)
 
-#### 🤖 AI-Powered Article Analysis (OpenAI GPT-4o-mini)
-- **What:** An AI assistant accessible from the article detail screen that offers three features: article summarization, headline improvement suggestions, and sentiment analysis.
-- **How:** Complete Clean Architecture implementation:
+#### 🤖 Análisis de artículos con IA (OpenAI GPT-4o-mini)
+- **Descripción:** Asistente IA accesible desde la pantalla de detalle con tres funciones: resumen del artículo, sugerencia de titular y análisis de sentimiento.
+- **Implementación:** Clean Architecture completa:
   - **Domain:** `AiRepository` (abstract), `SummarizeArticleUseCase`, `SuggestHeadlineUseCase`, `AnalyzeSentimentUseCase`
-  - **Data:** `AiService` implements `AiRepository`, calls OpenAI's Chat API via REST (Dio) with `gpt-4o-mini` model
-  - **Presentation:** `AiBottomSheet` — a draggable bottom sheet with three action buttons, loading states, result display, and error handling
-  - API key is stored in a gitignored file (`lib/config/api_keys.dart`) for security
-  - The AI icon (✨) appears in purple in the article detail AppBar
-- **Why:** Integrating AI adds real value for journalists — they can quickly summarize long articles, get headline suggestions, and understand article tone. It demonstrates integration with external AI APIs while maintaining architectural integrity.
-- **Location:**
-  - `lib/features/ai/` (full Clean Architecture: domain → data → presentation)
+  - **Data:** `AiService` implementa `AiRepository`, llama a la API de Chat de OpenAI via REST (Dio) con el modelo `gpt-4o-mini`
+  - **Presentation:** `AiBottomSheet` — panel deslizable con tres botones de acción, estados de carga, resultado y manejo de errores
+  - La API key se almacena en archivo gitignored (`lib/config/api_keys.dart`)
+  - El icono ✨ aparece en la barra de la pantalla de detalle
+- **Justificación:** La IA aporta valor real para periodistas — resúmenes rápidos, sugerencias de titulares y comprensión del tono del artículo. Demuestra integración con APIs externas de IA manteniendo la integridad arquitectónica.
+- **Ubicación:**
+  - `lib/features/ai/` (Clean Architecture completa: domain → data → presentation)
   - `lib/config/api_keys.dart` (gitignored)
 
-### 6.2 Prototypes Created
+### 6.2 Prototipos y patrones creados
 
-#### Architecture Extension for CRUD
-The Edit/Delete feature demonstrates how Clean Architecture scales. Adding a new operation requires touching each layer exactly once:
+#### Patrón de extensión CRUD
+La funcionalidad de Edit/Delete demuestra cómo escala Clean Architecture. Añadir una nueva operación requiere tocar cada capa exactamente una vez:
 
 ```
-Domain:  UseCase + Params        (pure Dart, no dependencies)
+Domain:       UseCase + Params        (Dart puro, sin dependencias)
    ↓
-Data:    DataSource + Repository (Firebase implementation)
+Data:         DataSource + Repository (implementación Firebase)
    ↓
 Presentation: Event + State + Screen  (UI + BLoC)
    ↓
-DI:      Register in GetIt      (injection_container.dart)
+DI:           Registrar en GetIt      (injection_container.dart)
 ```
 
-This pattern can be replicated for any new feature (e.g., comments, likes, user profiles) without modifying existing code — following the Open/Closed Principle.
+Este patrón se puede replicar para cualquier nueva funcionalidad (comentarios, likes, perfiles de usuario) sin modificar código existente — siguiendo el Principio Open/Closed.
 
-#### Combined Feed Architecture
-The `RemoteArticlesBloc` implements a unified feed pattern that merges articles from two completely different data sources (REST API + Firestore) into a single list:
+#### Feed unificado de múltiples fuentes
+El `RemoteArticlesBloc` implementa un patrón de feed combinado que fusiona artículos de dos fuentes completamente distintas (REST API + Firestore) en una sola lista:
 
 ```dart
-// Fetch both sources
 final dataState = await _getArticleUseCase();
 final publishedState = await _getPublishedArticlesUseCase();
 
-// Merge: published articles at the top
 allArticles.insertAll(0, publishedState.data!.map(_mapToArticleEntity));
 allArticles.addAll(dataState.data!);
 ```
 
-This pattern is extensible — additional sources (RSS feeds, other APIs) can be added by simply registering another use case and adding its results to the combined list.
+El patrón es extensible — se pueden añadir fuentes adicionales (RSS, otras APIs) registrando otro use case y concatenando sus resultados.
 
-### 6.3 How Can You Improve This
+### 6.3 Posibles mejoras
 
-1. **Real-Time Feed Updates** — Replace the one-time Firestore `get()` with a `snapshots()` stream so published articles appear instantly for all users without manual refresh.
+1. **Actualizaciones en tiempo real** — Reemplazar `get()` de Firestore por un stream `snapshots()` para que los artículos publicados aparezcan al instante para todos los usuarios.
+2. **Compresión de imágenes** — Compresión client-side antes de subir a Storage, y soporte para múltiples imágenes por artículo.
+3. **Categorías y tags** — Etiquetado de artículos por categoría con chips de filtro en la pantalla principal.
+4. **Arquitectura offline-first** — Persistencia local de Firestore para funcionamiento sin internet.
+5. **Suite de tests** — Tests unitarios para todos los BLoCs, use cases y repositorios. Tests de widgets para flujos críticos.
+6. **Pipeline CI/CD** — Workflow de GitHub Actions para ejecutar tests, analizar código y generar artefactos APK/web en cada push.
 
-3. **Image Compression & Multiple Images** — Add client-side image compression before upload, and support multiple images per article with a gallery view.
+## 7. Secciones adicionales
 
-4. **Article Categories & Tags** — Let journalists tag articles with categories, and add filter chips on the home screen to browse by topic.
+### Nota sobre compatibilidad web
 
-5. **Offline-First Architecture** — Enable Firestore persistence so the app works offline, syncing when connectivity returns.
+El proyecto contiene archivos JavaScript autogenerados (en el directorio `web/`) necesarios para que Firebase funcione en el navegador. Estos archivos **no son código fuente de la aplicación** — son archivos de configuración generados por `flutterfire configure`, necesarios para:
+- Inicialización del SDK de Firebase en web
+- SDKs web de Firebase Auth, Firestore y Storage
+- Registro del service worker para soporte PWA
 
-6. **Testing Suite** — Add unit tests for all BLoCs (event → state transitions), use cases, and repository implementations. Add widget tests for critical UI flows.
+Toda la lógica de la aplicación está escrita **íntegramente en Dart/Flutter**. Los archivos JS son dependencias de infraestructura, equivalentes a `google-services.json` (Android) y `GoogleService-Info.plist` (iOS).
 
-7. **CI/CD Pipeline** — GitHub Actions workflow to run tests, analyze code, and build APK/web artifacts on every push.
+### Arquitectura de inyección de dependencias
 
-## 7. Extra Sections
-
-### Web Compatibility Note
-
-The project contains auto-generated JavaScript files (in the `web/` directory) that are required for Firebase to function in the browser. These files are **not application source code** — they are configuration files generated by `flutterfire configure` and are necessary for:
-- Firebase SDK initialization on web
-- Firebase Auth, Firestore, and Storage web SDKs
-- Service worker registration for PWA support
-
-All application logic is written **entirely in Dart/Flutter**, as required by the project specification. The JS files are infrastructure-level dependencies, similar to how `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are platform-specific configuration files.
-
-### Dependency Injection Architecture
-
-The `injection_container.dart` file serves as the single source of truth for wiring all dependencies:
+`injection_container.dart` es el punto central donde se conectan todas las dependencias:
 
 ```
-Firebase instances (FirebaseAuth, Firestore, Storage)
+Instancias de Firebase (FirebaseAuth, Firestore, Storage)
     ↓
 Data Sources (FirebaseAuthDataSource, NewsApiService, ArticlePublisherDataSourceImpl, AiService)
     ↓
-Repositories (AuthRepositoryImpl, ArticleRepositoryImpl, ArticlePublisherRepositoryImpl)
+Repositorios (AuthRepositoryImpl, ArticleRepositoryImpl, ArticlePublisherRepositoryImpl)
     ↓
-Use Cases (SignIn, SignUp, SignOut, GetArticle, PublishArticle, DeleteArticle, UpdateArticle, SummarizeArticle, ...)
+Use Cases (SignIn, SignUp, SignOut, GetArticle, PublishArticle, DeleteArticle, UpdateArticle, Summarize...)
     ↓
 BLoCs (AuthBloc, RemoteArticlesBloc, LocalArticleBloc, ArticlePublisherBloc)
 ```
 
-Each layer only depends on the layer above it. BLoCs depend on Use Cases, Use Cases depend on Repository interfaces (not implementations), and only the DI container knows the concrete implementations — achieving full inversion of control.
+Cada capa solo depende de la capa superior. Los BLoCs dependen de Use Cases, los Use Cases dependen de interfaces de repositorio (no de implementaciones), y solo el contenedor DI conoce las implementaciones concretas — inversión de control completa.
 
 ### Firebase Security Rules
 
-The deployed Firestore and Storage rules enforce:
-- **Firestore:** Read access is open; create validates all required fields (`id`, `title`, `content`, `author`, `thumbnailUrl`, `thumbnailStoragePath`, `publishedAt`) with type checking; update validates `title` and `content`; delete is permitted
-- **Storage:** Maximum 5MB file size, image-only content types (`image/*`), organized under `media/articles/{articleId}/`
+Las reglas desplegadas en Firestore y Storage:
+- **Firestore:** Lectura abierta; creación valida todos los campos obligatorios (`id`, `title`, `content`, `author`, `thumbnailUrl`, `thumbnailStoragePath`, `publishedAt`) con verificación de tipos; actualización valida `title` y `content`; eliminación permitida
+- **Storage:** Tamaño máximo 5MB, solo tipos de contenido de imagen (`image/*`), organizado en `media/articles/{articleId}/`
 
-### Authentication Architecture
+### Arquitectura de autenticación
 
-Firebase Auth is integrated with Google Sign-In and email/password, following the same Clean Architecture pattern as every other feature:
-- The `AuthBloc` listens to `authStateChanges` stream for real-time session management
-- `main.dart` uses `BlocBuilder<AuthBloc, AuthState>` to route between login and home
-- Published articles automatically use the authenticated user's display name or email as author
-- API keys (OpenAI) are stored in a gitignored file to prevent credential leaks
+Firebase Auth está integrado con Google Sign-In y email/password, siguiendo el mismo patrón Clean Architecture que el resto de features:
+- `AuthBloc` escucha el stream `authStateChanges` para gestión de sesión en tiempo real
+- `main.dart` usa `BlocBuilder<AuthBloc, AuthState>` para enrutar entre login y home
+- Los artículos publicados usan automáticamente el nombre o email del usuario autenticado como autor
+- Las API keys (OpenAI) se almacenan en un archivo gitignored para evitar filtración de credenciales
