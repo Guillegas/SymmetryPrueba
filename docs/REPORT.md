@@ -1,6 +1,5 @@
 # Symmetry News App — Informe del Proyecto
-
-> 📎 **Capturas de pantalla y video explicativo:** [Google Drive](https://drive.google.com/drive/folders/1RUH9Y1DCyITQG4JHFqew-GBecvyHOGVp?usp=drive_link)
+> 📎 **Capturas de pantalla:**git [Google Drive](https://drive.google.com/drive/folders/1RUH9Y1DCyITQG4JHFqew-GBecvyHOGVp?usp=drive_link)
 
 ## 1. Introducción
 
@@ -82,7 +81,7 @@ gsutil cors set cors.json gs://symmetry-news-app-5dcc3.firebasestorage.app
 
 ### Aprendizajes técnicos
 
-- **Disciplina de Clean Architecture** — La separación estricta por capas resulta verbosa al principio, pero se amortiza al añadir nuevas funcionalidades. Añadir edit/delete requirió cambios mínimos en el código existente porque cada capa tiene una única responsabilidad.
+- **Disciplina de Clean Architecture** — La separación estricta por capas resulta liosa al principio, pero se amortiza al añadir nuevas funcionalidades. Añadir edit/delete requirió cambios mínimos en el código existente porque cada capa tiene una única responsabilidad.
 
 - **Predictibilidad de BLoC** — El flujo Event → State hace que el comportamiento sea determinista. Cada transición de estado es explícita, lo que facilita el debugging.
 
